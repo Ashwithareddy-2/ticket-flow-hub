@@ -1,144 +1,192 @@
-// MODEL — data + business logic (no UI)
-// Persists bookings to localStorage. Independent of any view.
+// MODEL — railway data + business logic. UI-independent.
+// Persists bookings to localStorage.
 
-export type Movie = {
+export type Station = { code: string; name: string };
+
+export type Train = {
   id: string;
-  title: string;
-  genre: string;
-  duration: string;
-  rating: string;
-  price: number;
-  poster: string; // gradient bg
-  synopsis: string;
+  number: string;
+  name: string;
+  fromCode: string;
+  toCode: string;
+  departure: string; // "06:30"
+  arrival: string;   // "10:45"
+  duration: string;  // "4h 15m"
+  classes: { code: "EC" | "FC" | "BC"; label: string; price: number; seatsTotal: number }[];
 };
 
+export type Passenger = { name: string; age: number };
+
 export type Booking = {
-  id: string;
-  movieId: string;
-  movieTitle: string;
-  customerName: string;
-  email: string;
-  showtime: string;
+  pnr: string;
+  trainId: string;
+  trainName: string;
+  trainNumber: string;
+  fromCode: string;
+  toCode: string;
+  fromName: string;
+  toName: string;
+  departure: string;
+  arrival: string;
+  travelDate: string; // YYYY-MM-DD
+  classCode: "EC" | "FC" | "BC";
+  classLabel: string;
+  passengers: Passenger[];
   seats: string[];
-  totalPrice: number;
+  totalFare: number;
+  email: string;
   createdAt: string;
 };
 
-const STORAGE_KEY = "lumiere_bookings_v1";
+export const STATIONS: Station[] = [
+  { code: "NDL", name: "New Delhi" },
+  { code: "BCT", name: "Mumbai Central" },
+  { code: "MAS", name: "Chennai Central" },
+  { code: "HWH", name: "Howrah Junction" },
+  { code: "SBC", name: "Bengaluru City" },
+  { code: "PUNE", name: "Pune Junction" },
+  { code: "JP", name: "Jaipur Junction" },
+  { code: "ADI", name: "Ahmedabad Junction" },
+];
 
-export const MOVIES: Movie[] = [
+export const TRAINS: Train[] = [
   {
-    id: "dune-3",
-    title: "Dune: Part Three",
-    genre: "Sci-Fi Epic",
-    duration: "2h 46m",
-    rating: "PG-13",
-    price: 18,
-    poster: "linear-gradient(135deg, #c87f3a, #3a1f0a)",
-    synopsis: "Paul Atreides confronts the cost of prophecy as empires collide on Arrakis.",
+    id: "t-12951",
+    number: "12951",
+    name: "Rajdhani Express",
+    fromCode: "NDL",
+    toCode: "BCT",
+    departure: "16:25",
+    arrival: "08:15",
+    duration: "15h 50m",
+    classes: [
+      { code: "EC", label: "Executive", price: 4200, seatsTotal: 24 },
+      { code: "FC", label: "First Class", price: 2800, seatsTotal: 36 },
+      { code: "BC", label: "Business", price: 1650, seatsTotal: 60 },
+    ],
   },
   {
-    id: "neon-skies",
-    title: "Neon Skies",
-    genre: "Cyberpunk Thriller",
-    duration: "2h 12m",
-    rating: "R",
-    price: 16,
-    poster: "linear-gradient(135deg, #d946ef, #1e1b4b)",
-    synopsis: "A rogue archivist races through a rain-soaked megacity to erase her own past.",
+    id: "t-22691",
+    number: "22691",
+    name: "Vande Bharat",
+    fromCode: "SBC",
+    toCode: "MAS",
+    departure: "06:00",
+    arrival: "10:55",
+    duration: "4h 55m",
+    classes: [
+      { code: "EC", label: "Executive", price: 2950, seatsTotal: 24 },
+      { code: "FC", label: "First Class", price: 1890, seatsTotal: 48 },
+    ],
   },
   {
-    id: "the-quiet-shore",
-    title: "The Quiet Shore",
-    genre: "Drama",
-    duration: "1h 58m",
-    rating: "PG",
-    price: 14,
-    poster: "linear-gradient(135deg, #14b8a6, #0f172a)",
-    synopsis: "Two strangers find unexpected solace during a single off-season weekend.",
+    id: "t-12259",
+    number: "12259",
+    name: "Sealdah Duronto",
+    fromCode: "HWH",
+    toCode: "NDL",
+    departure: "20:05",
+    arrival: "12:35",
+    duration: "16h 30m",
+    classes: [
+      { code: "FC", label: "First Class", price: 3100, seatsTotal: 36 },
+      { code: "BC", label: "Business", price: 1750, seatsTotal: 60 },
+    ],
   },
   {
-    id: "midnight-heist",
-    title: "Midnight Heist",
-    genre: "Action",
-    duration: "2h 04m",
-    rating: "PG-13",
-    price: 16,
-    poster: "linear-gradient(135deg, #f59e0b, #7c2d12)",
-    synopsis: "A retired thief is pulled into one final, impossible job across three cities.",
+    id: "t-12009",
+    number: "12009",
+    name: "Shatabdi Express",
+    fromCode: "BCT",
+    toCode: "ADI",
+    departure: "06:25",
+    arrival: "13:05",
+    duration: "6h 40m",
+    classes: [
+      { code: "EC", label: "Executive", price: 1850, seatsTotal: 24 },
+      { code: "FC", label: "First Class", price: 1190, seatsTotal: 48 },
+    ],
   },
   {
-    id: "ember-and-ash",
-    title: "Ember & Ash",
-    genre: "Fantasy",
-    duration: "2h 32m",
-    rating: "PG-13",
-    price: 17,
-    poster: "linear-gradient(135deg, #ef4444, #18181b)",
-    synopsis: "Twin heirs to a dying kingdom must choose between blood and a burning world.",
+    id: "t-11077",
+    number: "11077",
+    name: "Jhelum Express",
+    fromCode: "PUNE",
+    toCode: "JP",
+    departure: "17:20",
+    arrival: "16:10",
+    duration: "22h 50m",
+    classes: [
+      { code: "FC", label: "First Class", price: 2400, seatsTotal: 36 },
+      { code: "BC", label: "Business", price: 1290, seatsTotal: 72 },
+    ],
   },
   {
-    id: "afterlight",
-    title: "Afterlight",
-    genre: "Mystery",
-    duration: "1h 49m",
-    rating: "PG-13",
-    price: 15,
-    poster: "linear-gradient(135deg, #8b5cf6, #1e1b4b)",
-    synopsis: "A grief counselor begins receiving voicemails from a number that doesn't exist.",
+    id: "t-12627",
+    number: "12627",
+    name: "Karnataka Express",
+    fromCode: "NDL",
+    toCode: "SBC",
+    departure: "20:45",
+    arrival: "06:30",
+    duration: "33h 45m",
+    classes: [
+      { code: "FC", label: "First Class", price: 3450, seatsTotal: 36 },
+      { code: "BC", label: "Business", price: 1850, seatsTotal: 72 },
+    ],
   },
 ];
 
-export const SHOWTIMES = ["12:30 PM", "3:45 PM", "6:30 PM", "9:15 PM"];
+const STORAGE_KEY = "railsco_bookings_v1";
 
 function load(): Booking[] {
   if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); }
+  catch { return []; }
 }
+function save(b: Booking[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); }
 
-function save(bookings: Booking[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+function generatePNR(): string {
+  const n = Math.floor(1000000000 + Math.random() * 9000000000);
+  return String(n);
 }
 
 export const BookingModel = {
-  getAll(): Booking[] {
-    return load();
+  getAll(): Booking[] { return load().sort((a, b) => b.createdAt.localeCompare(a.createdAt)); },
+  getByPNR(pnr: string) { return load().find((b) => b.pnr === pnr); },
+  searchTrains(fromCode: string, toCode: string): Train[] {
+    if (!fromCode || !toCode) return TRAINS;
+    return TRAINS.filter((t) => t.fromCode === fromCode && t.toCode === toCode);
   },
-  getById(id: string): Booking | undefined {
-    return load().find((b) => b.id === id);
+  bookedSeatCount(trainId: string, travelDate: string, classCode: string): number {
+    return load()
+      .filter((b) => b.trainId === trainId && b.travelDate === travelDate && b.classCode === classCode)
+      .reduce((sum, b) => sum + b.seats.length, 0);
   },
-  create(input: Omit<Booking, "id" | "createdAt">): Booking {
-    const all = load();
-    // business rule: prevent duplicate seats for same movie + showtime
-    const conflict = all.some(
-      (b) =>
-        b.movieId === input.movieId &&
-        b.showtime === input.showtime &&
-        b.seats.some((s) => input.seats.includes(s)),
-    );
-    if (conflict) throw new Error("One or more seats are already booked for this showtime.");
+  create(input: Omit<Booking, "pnr" | "createdAt" | "seats"> & { seats?: string[] }): Booking {
+    const trainClass = TRAINS.find((t) => t.id === input.trainId)?.classes.find((c) => c.code === input.classCode);
+    if (!trainClass) throw new Error("Invalid class selection.");
+    const taken = this.bookedSeatCount(input.trainId, input.travelDate, input.classCode);
+    if (taken + input.passengers.length > trainClass.seatsTotal) {
+      throw new Error("Not enough seats available in this class for that date.");
+    }
+    const startSeat = taken + 1;
+    const seats = input.passengers.map((_, i) => `${input.classCode}-${String(startSeat + i).padStart(2, "0")}`);
     const booking: Booking = {
       ...input,
-      id: `BK-${Date.now().toString(36).toUpperCase()}`,
+      seats,
+      pnr: generatePNR(),
       createdAt: new Date().toISOString(),
     };
-    save([booking, ...all]);
+    save([booking, ...load()]);
     return booking;
   },
-  cancel(id: string): void {
-    save(load().filter((b) => b.id !== id));
-  },
-  getBookedSeats(movieId: string, showtime: string): string[] {
-    return load()
-      .filter((b) => b.movieId === movieId && b.showtime === showtime)
-      .flatMap((b) => b.seats);
-  },
+  cancel(pnr: string) { save(load().filter((b) => b.pnr !== pnr)); },
 };
 
-export function getMovie(id: string): Movie | undefined {
-  return MOVIES.find((m) => m.id === id);
+export function getStationName(code: string) {
+  return STATIONS.find((s) => s.code === code)?.name ?? code;
+}
+export function getTrain(id: string) {
+  return TRAINS.find((t) => t.id === id);
 }

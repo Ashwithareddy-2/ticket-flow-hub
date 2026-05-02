@@ -1,91 +1,112 @@
-// PRESENTER — middle layer between View (React components) and Model.
-// Views call presenter hooks; presenter coordinates Model + UI state.
+// PRESENTER — coordinates Model + UI state. Views call these hooks.
 
-import { useCallback, useEffect, useState } from "react";
-import { BookingModel, type Booking } from "./model";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookingModel, getTrain, type Passenger, type Train } from "./model";
 import { toast } from "sonner";
 
-export function useBookingsPresenter() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+export function useTrainSearchPresenter() {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [results, setResults] = useState<Train[] | null>(null);
 
-  const refresh = useCallback(() => {
-    setBookings(BookingModel.getAll());
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  const cancel = useCallback(
-    (id: string) => {
-      BookingModel.cancel(id);
-      refresh();
-      toast.success("Booking cancelled", { description: `Reference ${id} has been removed.` });
-    },
-    [refresh],
-  );
-
-  return { bookings, cancel, refresh };
-}
-
-export function useBookingFlowPresenter(movieId: string) {
-  const [showtime, setShowtime] = useState<string>("");
-  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  const [bookedSeats, setBookedSeats] = useState<string[]>([]);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    if (showtime) setBookedSeats(BookingModel.getBookedSeats(movieId, showtime));
-    setSelectedSeats([]);
-  }, [movieId, showtime]);
-
-  const toggleSeat = (seat: string) => {
-    if (bookedSeats.includes(seat)) return;
-    setSelectedSeats((s) => (s.includes(seat) ? s.filter((x) => x !== seat) : [...s, seat]));
+  const search = () => {
+    if (!from || !to) {
+      toast.error("Please choose origin and destination");
+      return;
+    }
+    if (from === to) {
+      toast.error("Origin and destination must differ");
+      return;
+    }
+    setResults(BookingModel.searchTrains(from, to));
   };
 
-  const submit = (movieTitle: string, pricePerSeat: number): Booking | null => {
-    if (!showtime) {
-      toast.error("Please select a showtime");
-      return null;
+  return { from, setFrom, to, setTo, date, setDate, results, search };
+}
+
+export function useBookingFlowPresenter(trainId: string) {
+  const train = getTrain(trainId);
+  const [travelDate, setTravelDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [classCode, setClassCode] = useState<"EC" | "FC" | "BC" | "">("");
+  const [passengers, setPassengers] = useState<Passenger[]>([{ name: "", age: 0 }]);
+  const [email, setEmail] = useState("");
+
+  const selectedClass = useMemo(
+    () => train?.classes.find((c) => c.code === classCode),
+    [train, classCode],
+  );
+
+  const seatsTaken = useMemo(() => {
+    if (!train || !classCode) return 0;
+    return BookingModel.bookedSeatCount(train.id, travelDate, classCode);
+  }, [train, classCode, travelDate]);
+
+  const seatsAvailable = selectedClass ? selectedClass.seatsTotal - seatsTaken : 0;
+  const totalFare = selectedClass ? selectedClass.price * passengers.length : 0;
+
+  const updatePassenger = (i: number, p: Partial<Passenger>) => {
+    setPassengers((arr) => arr.map((x, idx) => (idx === i ? { ...x, ...p } : x)));
+  };
+  const addPassenger = () => {
+    if (passengers.length >= 6) return toast.error("Up to 6 passengers per booking");
+    setPassengers((a) => [...a, { name: "", age: 0 }]);
+  };
+  const removePassenger = (i: number) => {
+    setPassengers((a) => a.filter((_, idx) => idx !== i));
+  };
+
+  const submit = () => {
+    if (!train) return null;
+    if (!classCode || !selectedClass) { toast.error("Please choose a class"); return null; }
+    if (passengers.some((p) => !p.name.trim() || !p.age)) {
+      toast.error("Please complete passenger details"); return null;
     }
-    if (selectedSeats.length === 0) {
-      toast.error("Please select at least one seat");
-      return null;
-    }
-    if (!name.trim() || !email.trim()) {
-      toast.error("Please enter your name and email");
-      return null;
+    if (!email.trim()) { toast.error("Please enter contact email"); return null; }
+    if (passengers.length > seatsAvailable) {
+      toast.error(`Only ${seatsAvailable} seats left in this class`); return null;
     }
     try {
       const booking = BookingModel.create({
-        movieId,
-        movieTitle,
-        customerName: name.trim(),
-        email: email.trim(),
-        showtime,
-        seats: selectedSeats,
-        totalPrice: selectedSeats.length * pricePerSeat,
+        trainId: train.id,
+        trainName: train.name,
+        trainNumber: train.number,
+        fromCode: train.fromCode,
+        toCode: train.toCode,
+        fromName: "",
+        toName: "",
+        departure: train.departure,
+        arrival: train.arrival,
+        travelDate,
+        classCode,
+        classLabel: selectedClass.label,
+        passengers,
+        totalFare,
+        email,
       });
-      toast.success("Booking confirmed!", { description: `Reference: ${booking.id}` });
+      toast.success("Booking confirmed", { description: `PNR ${booking.pnr}` });
       return booking;
-    } catch (err) {
-      toast.error((err as Error).message);
+    } catch (e) {
+      toast.error((e as Error).message);
       return null;
     }
   };
 
   return {
-    showtime,
-    setShowtime,
-    selectedSeats,
-    bookedSeats,
-    toggleSeat,
-    name,
-    setName,
-    email,
-    setEmail,
-    submit,
+    train, travelDate, setTravelDate, classCode, setClassCode,
+    passengers, updatePassenger, addPassenger, removePassenger,
+    email, setEmail, selectedClass, seatsAvailable, totalFare, submit,
   };
+}
+
+export function useBookingsPresenter() {
+  const [bookings, setBookings] = useState(BookingModel.getAll());
+  const refresh = useCallback(() => setBookings(BookingModel.getAll()), []);
+  useEffect(() => { refresh(); }, [refresh]);
+  const cancel = useCallback((pnr: string) => {
+    BookingModel.cancel(pnr);
+    refresh();
+    toast.success("Booking cancelled", { description: `PNR ${pnr} removed.` });
+  }, [refresh]);
+  return { bookings, cancel, refresh };
 }
