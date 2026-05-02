@@ -28,72 +28,91 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-gold: var(--gold);
-  --color-gold-glow: var(--gold-glow);
-  --font-display: "Playfair Display", Georgia, serif;
+  --color-amber: var(--amber);
+  --color-amber-glow: var(--amber-glow);
+  --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
 }
 
 :root {
-  --radius: 0.5rem;
-  /* Cinematic dark + warm gold */
-  --background: oklch(0.13 0.012 60);
-  --foreground: oklch(0.96 0.01 80);
+  --radius: 0.625rem;
+  /* Deep teal canvas + warm amber accent — railway-station-at-sunset palette */
+  --background: oklch(0.985 0.006 95);
+  --foreground: oklch(0.22 0.04 200);
 
-  --card: oklch(0.17 0.014 60);
-  --card-foreground: oklch(0.96 0.01 80);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.04 200);
 
-  --popover: oklch(0.17 0.014 60);
-  --popover-foreground: oklch(0.96 0.01 80);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.04 200);
 
-  --primary: oklch(0.78 0.14 75);
-  --primary-foreground: oklch(0.15 0.02 60);
+  --primary: oklch(0.32 0.06 200);          /* deep teal */
+  --primary-foreground: oklch(0.985 0.006 95);
 
-  --secondary: oklch(0.22 0.015 60);
-  --secondary-foreground: oklch(0.96 0.01 80);
+  --secondary: oklch(0.96 0.012 95);
+  --secondary-foreground: oklch(0.22 0.04 200);
 
-  --muted: oklch(0.2 0.012 60);
-  --muted-foreground: oklch(0.65 0.02 70);
+  --muted: oklch(0.95 0.012 95);
+  --muted-foreground: oklch(0.5 0.03 200);
 
-  --accent: oklch(0.78 0.14 75);
-  --accent-foreground: oklch(0.15 0.02 60);
+  --accent: oklch(0.78 0.16 65);            /* warm amber */
+  --accent-foreground: oklch(0.22 0.04 200);
 
   --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive-foreground: oklch(0.985 0 0);
 
-  --border: oklch(0.27 0.018 65);
-  --input: oklch(0.22 0.015 60);
-  --ring: oklch(0.78 0.14 75);
+  --border: oklch(0.9 0.012 95);
+  --input: oklch(0.97 0.01 95);
+  --ring: oklch(0.78 0.16 65);
 
-  --gold: oklch(0.78 0.14 75);
-  --gold-glow: oklch(0.86 0.16 85);
+  --amber: oklch(0.78 0.16 65);
+  --amber-glow: oklch(0.86 0.17 75);
 
-  --gradient-gold: linear-gradient(135deg, var(--gold), var(--gold-glow));
-  --gradient-dark: linear-gradient(180deg, oklch(0.1 0.01 60), oklch(0.15 0.014 60));
-  --shadow-gold: 0 10px 40px -10px oklch(0.78 0.14 75 / 0.4);
-  --shadow-elegant: 0 20px 60px -20px oklch(0 0 0 / 0.7);
+  --gradient-amber: linear-gradient(135deg, var(--amber), var(--amber-glow));
+  --gradient-deep: linear-gradient(135deg, oklch(0.28 0.06 200), oklch(0.18 0.05 220));
+  --shadow-amber: 0 12px 40px -12px oklch(0.78 0.16 65 / 0.45);
+  --shadow-soft: 0 12px 40px -16px oklch(0.22 0.04 200 / 0.18);
+  --shadow-card: 0 1px 2px oklch(0.22 0.04 200 / 0.05), 0 8px 24px -12px oklch(0.22 0.04 200 / 0.12);
+
+  /* Ticket dashed perforation */
+  --perforation: radial-gradient(circle at 0 50%, transparent 8px, var(--card) 8.5px) left/16px 100% repeat-y,
+                 radial-gradient(circle at 100% 50%, transparent 8px, var(--card) 8.5px) right/16px 100% repeat-y;
 }
 
 .dark {
-  --background: oklch(0.13 0.012 60);
-  --foreground: oklch(0.96 0.01 80);
+  --background: oklch(0.16 0.025 220);
+  --foreground: oklch(0.96 0.01 95);
+  --card: oklch(0.21 0.03 220);
+  --card-foreground: oklch(0.96 0.01 95);
+  --popover: oklch(0.21 0.03 220);
+  --popover-foreground: oklch(0.96 0.01 95);
+  --primary: oklch(0.78 0.16 65);
+  --primary-foreground: oklch(0.18 0.04 220);
+  --secondary: oklch(0.26 0.03 220);
+  --secondary-foreground: oklch(0.96 0.01 95);
+  --muted: oklch(0.24 0.025 220);
+  --muted-foreground: oklch(0.7 0.02 95);
+  --accent: oklch(0.78 0.16 65);
+  --accent-foreground: oklch(0.18 0.04 220);
+  --border: oklch(0.32 0.025 220);
+  --input: oklch(0.26 0.03 220);
+  --ring: oklch(0.78 0.16 65);
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
+  * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     background-image:
-      radial-gradient(ellipse at top, oklch(0.78 0.14 75 / 0.08), transparent 60%),
-      radial-gradient(ellipse at bottom, oklch(0.6 0.22 25 / 0.05), transparent 60%);
+      radial-gradient(ellipse 1200px 600px at 80% -10%, oklch(0.78 0.16 65 / 0.10), transparent 60%),
+      radial-gradient(ellipse 900px 500px at -10% 100%, oklch(0.32 0.06 200 / 0.08), transparent 60%);
     background-attachment: fixed;
   }
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+    font-weight: 600;
   }
 }
